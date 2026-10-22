@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your TechBridge internship progress, tasks, and web development learning.">
+    <title>TechBridge | Intern Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="site-header">
+            <div class="container header-inner">
+                <a href="index.html" class="logo">
+                    <img src="images/techbridge-logo.png" alt="TechBridge logo">
+                </a>
+
+                <nav class="main-nav" aria-label="Main navigation">
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="programs.html">Programs</a></li>
+                        <li><a href="tasks.html">Internship Roadmap</a></li>
+                        <li><a href="challenges.html">Challenges</a></li>
+                        <li><a href="dashboard.html" aria-current="page">Dashboard</a></li>
+                        <li><a href="index.html#apply">Apply</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <main>
+            <section class="dashboard-welcome container">
+                <p class="dashboard-eyebrow">INTERN WORKSPACE</p>
+                <h1>Welcome back, Samuel Ayomide Adeniyi!</h1>
+                <p>Keep learning, complete your tasks, and track your internship progress.</p>
+
+                <div class="dashboard-profile">
+                    <p><strong>Intern:</strong> Samuel Ayomide Adeniyi</p>
+                    <p><strong>Track:</strong> Web Development</p>
+                    <p><strong>Status:</strong> <span>In Progress</span></p>
+                </div>
+            </section>
+
+            <section class="dashboard-section container" id="internship-progress">
+                <div class="dashboard-section-heading">
+                    <p class="dashboard-eyebrow">YOUR JOURNEY</p>
+                    <h2>Internship Progress</h2>
+                    <p>Track your progress across all eight internship tasks.</p>
+                </div>
+
+                <div class="progress-summary">
+                    <div class="progress-stat">
+                        <span>Total Tasks</span>
+                        <strong id="total-tasks">8</strong>
+                    </div>
+
+                    <div class="progress-stat">
+                        <span>Completed</span>
+                        <strong id="completed-tasks">0</strong>
+                    </div>
+
+                    <div class="progress-stat">
+                        <span>Remaining</span>
+                        <strong id="remaining-tasks">8</strong>
+                    </div>
+
+                    <div class="progress-stat">
+                        <span>Overall Progress</span>
+                        <strong id="progress-percentage">0%</strong>
+                    </div>
+                </div>
+
+                <div class="progress-track" id="progress-track" role="progressbar" aria-label="Internship completion progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <p id="progress-message" aria-live="polite">You have 8 tasks remaining. Keep going!</p>
+            </section>
+
+            <section class="dashboard-section container" id="task-tracker">
+                <div class="dashboard-section-heading">
+                    <p class="dashboard-eyebrow">TASK MANAGEMENT</p>
+                    <h2>Your Internship Tasks</h2>
+                    <p>View your assignments and update their completion status.</p>
+                </div>
+
+                <div class="task-filters" role="group" aria-label="Filter tasks by status">
+                    <button type="button" class="task-filter active" data-status-filter="all" aria-pressed="true">All</button>
+                    <button type="button" class="task-filter" data-status-filter="completed" aria-pressed="false">Completed</button>
+                    <button type="button" class="task-filter" data-status-filter="in-progress" aria-pressed="false">In Progress</button>
+                    <button type="button" class="task-filter" data-status-filter="not-started" aria-pressed="false">Not Started</button>
+                </div>
+
+                <div id="task-results" class="task-results" aria-live="polite"></div>
+                <div id="dashboard-task-list" class="dashboard-task-grid"></div>
+            </section>
+
+            <section class="dashboard-section container" id="challenge-hub">
+                <div class="dashboard-feature-card">
+                    <div>
+                        <p class="dashboard-eyebrow">PRACTICAL LEARNING</p>
+                        <h2>Challenge Hub</h2>
+                        <p>Practise your skills with challenges in Data Analytics and Web Development.</p>
+                        <p><strong>6 challenges available</strong></p>
+                    </div>
+
+                    <a href="challenges.html" class="btn btn-primary">Explore Challenges</a>
+                </div>
+            </section>
+
+            <section class="dashboard-section container" id="technology-explorer">
+                <div class="dashboard-section-heading">
+                    <p class="dashboard-eyebrow">EXPAND YOUR KNOWLEDGE</p>
+                    <h2>Modern Web Technologies</h2>
+                    <p>Explore technologies used to build modern websites and complete web applications.</p>
+                </div>
+
+                <div class="technology-tabs" role="group" aria-label="Choose a technology">
+                    <button type="button" class="technology-tab active" data-technology="nextjs" aria-pressed="true">Next.js</button>
+                    <button type="button" class="technology-tab" data-technology="vue" aria-pressed="false">Vue.js</button>
+                    <button type="button" class="technology-tab" data-technology="angular" aria-pressed="false">Angular</button>
+                    <button type="button" class="technology-tab" data-technology="backend" aria-pressed="false">Backend Development</button>
+                </div>
+
+                <article class="technology-content" id="technology-content" aria-live="polite">
+                    <h3 id="technology-title">Next.js</h3>
+                    <p id="technology-description">Next.js is a React framework used to build modern web applications with routing, server rendering, and other built-in features.</p>
+                    <div id="technology-extra"></div>
+                    <a id="technology-link" class="btn btn-primary" href="https://nextjs.org/" target="_blank" rel="noopener noreferrer">Learn More</a>
+                </article>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <p>&copy; 2026 TechBridge. All rights reserved.</p>
+                <p>Learn. Build. Grow.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
