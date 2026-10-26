@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "title": "Build the TechBridge Homepage",
+    "description": "Create the first version of the TechBridge website using HTML and CSS.",
+    "status": "completed",
+    "day": 1,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": 2,
+    "title": "Build the TechBridge Programs Experience",
+    "description": "Create a Programs experience presenting TechBridge's available learning programs.",
+    "status": "completed",
+    "day": 4,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": 3,
+    "title": "Build the Internship Tasks Experience",
+    "description": "Create an interface that presents the TechBridge internship tasks and helps users understand the internship journey.",
+    "status": "completed",
+    "day": 8,
+    "difficulty": "Beginner → Intermediate"
+  },
+  {
+    "id": 4,
+    "title": "Build an Interactive Internship Roadmap",
+    "description": "Use JavaScript to allow visitors to switch between the Data Analytics and Web Development internship tracks.",
+    "status": "completed",
+    "day": 11,
+    "difficulty": "Beginner → Intermediate"
+  },
+  {
+    "id": 5,
+    "title": "Build the Intern Registration Experience",
+    "description": "Create a professional registration and onboarding interface for TechBridge interns.",
+    "status": "completed",
+    "day": 15,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": 6,
+    "title": "Build the Task Submission System",
+    "description": "Create an interface through which interns can prepare and submit their task work.",
+    "status": "completed",
+    "day": 19,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": 7,
+    "title": "Build the Intern Dashboard",
+    "description": "Create a dashboard where an intern can view their profile, progress, tasks and submissions.",
+    "status": "not-started",
+    "day": 22,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": 8,
+    "title": "Build the Complete TechBridge Internship Platform",
+    "description": "Combine the different components created during the internship into a complete TechBridge platform.",
+    "status": "not-started",
+    "day": 26,
+    "difficulty": "Intermediate"
+  }
+]

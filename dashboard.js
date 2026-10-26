@@ -1,73 +1,6 @@
-"use strict";
+let dashboardTasks = [];
 
-const dashboardTasks = [
-{
-number: 1,
-title: "Build the TechBridge Homepage",
-day: 1,
-description: "Create the first version of the TechBridge website using HTML and CSS.",
-difficulty: "Beginner",
-status: "completed"
-},
-{
-number: 2,
-title: "Build the TechBridge Programs Experience",
-day: 4,
-description: "Create a Programs experience presenting TechBridge's available learning programs.",
-difficulty: "Beginner",
-status: "in-progress"
-},
-{
-number: 3,
-title: "Build the Internship Tasks Experience",
-day: 8,
-description: "Create an interface that presents the TechBridge internship tasks and helps users understand the internship journey.",
-difficulty: "Beginner → Intermediate",
-status: "not-started"
-},
-{
-number: 4,
-title: "Build an Interactive Internship Roadmap",
-day: 11,
-description: "Use JavaScript to allow visitors to switch between the Data Analytics and Web Development internship tracks.",
-difficulty: "Beginner → Intermediate",
-status: "not-started"
-},
-{
-number: 5,
-title: "Build the Intern Registration Experience",
-day: 15,
-description: "Create a professional registration and onboarding interface for TechBridge interns.",
-difficulty: "Intermediate",
-status: "not-started"
-},
-{
-number: 6,
-title: "Build the Task Submission System",
-day: 19,
-description: "Create an interface through which interns can prepare and submit their task work.",
-difficulty: "Intermediate",
-status: "not-started"
-},
-{
-number: 7,
-title: "Build the Intern Dashboard",
-day: 22,
-description: "Create a dashboard where an intern can view their profile, progress, tasks and submissions.",
-difficulty: "Intermediate",
-status: "not-started"
-},
-{
-number: 8,
-title: "Build the Complete TechBridge Internship Platform",
-day: 26,
-description: "Combine the different components created during the internship into a complete TechBridge platform.",
-difficulty: "Intermediate",
-status: "not-started"
-}
-];
-
-const dashboardStorageKey = "techbridge-dashboard-progress";
+let activeFilter = "all";
 
 const taskListElement = document.getElementById("dashboard-task-list");
 const taskResultsElement = document.getElementById("task-results");
@@ -79,395 +12,618 @@ const progressTrackElement = document.getElementById("progress-track");
 const progressFillElement = document.getElementById("progress-fill");
 const progressMessageElement = document.getElementById("progress-message");
 
-const taskFilterButtons = document.querySelectorAll("[data-status-filter]");
-const technologyButtons = document.querySelectorAll("[data-technology]");
+const technologyTitleElement = document.getElementById("technology-title");
+const technologyDescriptionElement = document.getElementById("technology-description");
+const technologyExtraElement = document.getElementById("technology-extra");
+const technologyLinkElement = document.getElementById("technology-link");
 
-let activeTaskFilter = "all";
+const technologyInformation = {
+    nextjs: {
+        title: "Next.js",
+        description:
+            "Next.js is a React framework for building modern web applications. It supports file-based routing, server-side rendering, and static site generation.",
+        extra:
+            "Learning focus: Understand how Next.js builds on React, organizes pages, and supports full-stack web development.",
+        link: "https://nextjs.org/docs"
+    },
 
-function loadSavedProgress() {
-try {
-const savedProgress = localStorage.getItem(dashboardStorageKey);
+    vue: {
+        title: "Vue.js",
+        description:
+            "Vue.js is a JavaScript framework for building interactive user interfaces. It uses a component-based approach and is designed to be approachable for beginners.",
+        extra:
+            "Learning focus: Explore Vue components, reactive data, directives, and event handling.",
+        link: "https://vuejs.org/guide/"
+    },
 
-    if (!savedProgress) {
+    angular: {
+        title: "Angular",
+        description:
+            "Angular is a web application framework maintained by Google. It provides tools for building structured applications using TypeScript, components, services, and dependency injection.",
+        extra:
+            "Learning focus: Understand components, templates, services, and how Angular organizes larger applications.",
+        link: "https://angular.dev/overview"
+    },
+
+    backend: {
+        title: "Backend Development",
+        description:
+            "Backend development focuses on server-side logic, APIs, data storage, validation, and communication between the frontend and server.",
+        extra:
+            "Technologies to explore: Node.js, Express.js, Django, and PostgreSQL. This task introduces Node.js and Express.js through the TechBridge Task Management API.",
+        link: "https://expressjs.com/"
+    }
+};
+
+function createApiElements() {
+    if (!taskListElement || !taskListElement.parentElement) {
+        console.error("The dashboard task list element could not be found.");
         return;
     }
 
-    const savedStatuses = JSON.parse(savedProgress);
+    const container = taskListElement.parentElement;
 
-    if (!savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses)) {
+    const apiStatusElement = document.createElement("p");
+    apiStatusElement.id = "dashboard-api-status";
+    apiStatusElement.className = "dashboard-api-status";
+    apiStatusElement.setAttribute("role", "status");
+    apiStatusElement.textContent = "Connecting to the task API...";
+
+    const loadingElement = document.createElement("p");
+    loadingElement.id = "dashboard-loading";
+    loadingElement.className = "dashboard-loading";
+    loadingElement.setAttribute("role", "status");
+    loadingElement.textContent = "Loading your tasks...";
+
+    const errorElement = document.createElement("div");
+    errorElement.id = "dashboard-api-error";
+    errorElement.className = "dashboard-api-error";
+    errorElement.setAttribute("role", "alert");
+    errorElement.textContent =
+        "Unable to load tasks. Check your API connection and try again.";
+    errorElement.hidden = true;
+
+    container.insertBefore(apiStatusElement, taskListElement);
+    container.insertBefore(loadingElement, taskListElement);
+    container.insertBefore(errorElement, taskListElement);
+}
+
+function setApiStatus(isConnected) {
+    const statusElement = document.getElementById("dashboard-api-status");
+
+    if (!statusElement) {
         return;
     }
 
-    dashboardTasks.forEach(function (task) {
-        const savedStatus = savedStatuses[task.number];
+    statusElement.textContent = isConnected
+        ? "API Status: Connected"
+        : "API Status: Offline";
 
-        if (["completed", "in-progress", "not-started"].includes(savedStatus)) {
-            task.status = savedStatus;
+    statusElement.classList.toggle("is-connected", isConnected);
+    statusElement.classList.toggle("is-offline", !isConnected);
+}
+
+function showLoading(isLoading) {
+    const loadingElement = document.getElementById("dashboard-loading");
+
+    if (loadingElement) {
+        loadingElement.hidden = !isLoading;
+    }
+}
+
+function showApiError(message) {
+    const errorElement = document.getElementById("dashboard-api-error");
+
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.hidden = false;
+    }
+}
+
+function hideApiError() {
+    const errorElement = document.getElementById("dashboard-api-error");
+
+    if (errorElement) {
+        errorElement.hidden = true;
+    }
+}
+
+async function loadTasks() {
+    showLoading(true);
+    hideApiError();
+
+    try {
+        const response = await fetch("/api/tasks");
+
+        if (!response.ok) {
+            throw new Error("The server could not retrieve the tasks.");
         }
-    });
-} catch (error) {
-    console.error("Unable to load saved dashboard progress:", error);
-}
 
-}
+        const tasks = await response.json();
 
-function saveProgress() {
-try {
-const taskStatuses = {};
+        if (!Array.isArray(tasks)) {
+            throw new Error("The API returned an unexpected response.");
+        }
 
-    dashboardTasks.forEach(function (task) {
-        taskStatuses[task.number] = task.status;
-    });
+        dashboardTasks = tasks.map(function (task) {
+            return {
+                number: task.id,
+                title: task.title,
+                day: task.day,
+                description: task.description,
+                difficulty: task.difficulty,
+                status: task.status
+            };
+        });
 
-    localStorage.setItem(dashboardStorageKey, JSON.stringify(taskStatuses));
-} catch (error) {
-    console.error("Unable to save dashboard progress:", error);
-}
+        setApiStatus(true);
+        updateProgress();
+        renderTasks();
+    } catch (error) {
+        console.error("Unable to load tasks:", error);
 
+        dashboardTasks = [];
+
+        setApiStatus(false);
+        updateProgress();
+        renderTasks();
+
+        showApiError(
+            "Unable to load tasks. Make sure the TechBridge API server is running, then reload this page."
+        );
+    } finally {
+        showLoading(false);
+    }
 }
 
 function getStatusLabel(status) {
-const statusLabels = {
-completed: "Completed",
-"in-progress": "In Progress",
-"not-started": "Not Started"
-};
+    const labels = {
+        completed: "Completed",
+        "in-progress": "In Progress",
+        "not-started": "Not Started"
+    };
 
-return statusLabels[status] || "Not Started";
+    return labels[status] || "Unknown";
+}
 
+function getFilteredTasks() {
+    if (activeFilter === "all") {
+        return dashboardTasks;
+    }
+
+    return dashboardTasks.filter(function (task) {
+        return task.status === activeFilter;
+    });
 }
 
 function createTaskCard(task) {
-const card = document.createElement("article");
-card.className = "dashboard-task-card";
+    const card = document.createElement("article");
+    card.className = "dashboard-task-card";
 
-const metadata = document.createElement("div");
-metadata.className = "dashboard-task-meta";
+    const header = document.createElement("div");
+    header.className = "dashboard-task-card-header";
 
-const taskNumber = document.createElement("span");
-taskNumber.className = "dashboard-task-number";
-taskNumber.textContent = `Task ${task.number}`;
+    const number = document.createElement("span");
+    number.className = "dashboard-task-number";
+    number.textContent = "Task " + task.number;
 
-const taskDay = document.createElement("span");
-taskDay.className = "dashboard-task-day";
-taskDay.textContent = `Day ${task.day}`;
+    const status = document.createElement("span");
+    status.className = "dashboard-task-status";
+    status.classList.add("status-" + task.status);
+    status.textContent = getStatusLabel(task.status);
 
-const difficulty = document.createElement("span");
-difficulty.className = "dashboard-task-difficulty";
-difficulty.textContent = task.difficulty;
+    header.appendChild(number);
+    header.appendChild(status);
 
-metadata.append(taskNumber, taskDay, difficulty);
+    const title = document.createElement("h3");
+    title.textContent = task.title;
 
-const title = document.createElement("h3");
-title.textContent = task.title;
+    const description = document.createElement("p");
+    description.className = "dashboard-task-description";
+    description.textContent = task.description;
 
-const status = document.createElement("span");
-status.className = `dashboard-task-status status-${task.status}`;
-status.textContent = getStatusLabel(task.status);
+    const metadata = document.createElement("div");
+    metadata.className = "dashboard-task-meta";
 
-const description = document.createElement("p");
-description.className = "dashboard-task-description";
-description.textContent = task.description;
+    const day = document.createElement("span");
+    day.className = "dashboard-task-day";
+    day.textContent = "Day " + task.day;
 
-const actions = document.createElement("div");
-actions.className = "dashboard-task-actions";
+    const difficulty = document.createElement("span");
+    difficulty.className = "dashboard-task-difficulty";
+    difficulty.textContent = task.difficulty;
 
-const detailsButton = document.createElement("button");
-detailsButton.type = "button";
-detailsButton.className = "btn-outline";
-detailsButton.textContent = "View Details";
-detailsButton.addEventListener("click", function () {
-    showTaskDetails(task);
-});
+    metadata.appendChild(day);
+    metadata.appendChild(difficulty);
 
-actions.appendChild(detailsButton);
+    const actions = document.createElement("div");
+    actions.className = "dashboard-task-actions";
 
-if (task.status !== "completed") {
-    const completeButton = document.createElement("button");
-    completeButton.type = "button";
-    completeButton.className = "btn-primary";
-    completeButton.textContent = "Mark as Completed";
-    completeButton.addEventListener("click", function () {
-        markTaskCompleted(task.number);
+    const detailsButton = document.createElement("button");
+    detailsButton.type = "button";
+    detailsButton.className = "btn-outline";
+    detailsButton.textContent = "View Task";
+
+    detailsButton.addEventListener("click", function () {
+        showTaskDetails(task.number);
     });
 
-    actions.appendChild(completeButton);
-}
+    actions.appendChild(detailsButton);
 
-card.append(metadata, title, status, description, actions);
+    if (task.status !== "completed") {
+        const completeButton = document.createElement("button");
+        completeButton.type = "button";
+        completeButton.className = "btn-primary";
+        completeButton.textContent = "Mark as Completed";
 
-return card;
+        completeButton.addEventListener("click", function () {
+            markTaskCompleted(task.number);
+        });
 
+        actions.appendChild(completeButton);
+    }
+
+    card.appendChild(header);
+    card.appendChild(title);
+    card.appendChild(description);
+    card.appendChild(metadata);
+    card.appendChild(actions);
+
+    return card;
 }
 
 function renderTasks() {
-taskListElement.replaceChildren();
+    if (!taskListElement) {
+        return;
+    }
 
-const filteredTasks = dashboardTasks.filter(function (task) {
-    return activeTaskFilter === "all" || task.status === activeTaskFilter;
-});
+    taskListElement.replaceChildren();
 
-taskResultsElement.textContent =
-    `Showing ${filteredTasks.length} of ${dashboardTasks.length} tasks`;
+    const filteredTasks = getFilteredTasks();
 
-if (filteredTasks.length === 0) {
-    const emptyMessage = document.createElement("p");
-    emptyMessage.className = "dashboard-empty";
-    emptyMessage.textContent = "No tasks match this filter. Choose another status to see more tasks.";
-    taskListElement.appendChild(emptyMessage);
-    return;
-}
+    if (taskResultsElement) {
+        taskResultsElement.textContent =
+            "Showing " +
+            filteredTasks.length +
+            " of " +
+            dashboardTasks.length +
+            " tasks";
+    }
 
-filteredTasks.forEach(function (task) {
-    taskListElement.appendChild(createTaskCard(task));
-});
+    if (filteredTasks.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "dashboard-empty";
 
+        if (dashboardTasks.length === 0) {
+            emptyMessage.textContent =
+                "No tasks are available. Check the API connection and try again.";
+        } else if (activeFilter === "completed") {
+            emptyMessage.textContent =
+                "You have not completed any tasks yet.";
+        } else if (activeFilter === "in-progress") {
+            emptyMessage.textContent =
+                "There are no tasks currently in progress.";
+        } else if (activeFilter === "not-started") {
+            emptyMessage.textContent =
+                "There are no tasks waiting to be started.";
+        } else {
+            emptyMessage.textContent = "No tasks found.";
+        }
+
+        taskListElement.appendChild(emptyMessage);
+        return;
+    }
+
+    filteredTasks.forEach(function (task) {
+        taskListElement.appendChild(createTaskCard(task));
+    });
 }
 
 function updateProgress() {
-const total = dashboardTasks.length;
+    const total = dashboardTasks.length;
 
-const completed = dashboardTasks.filter(function (task) {
-    return task.status === "completed";
-}).length;
+    const completed = dashboardTasks.filter(function (task) {
+        return task.status === "completed";
+    }).length;
 
-const remaining = total - completed;
-const percentage = Math.round((completed / total) * 100);
+    const remaining = total - completed;
 
-totalTasksElement.textContent = total;
-completedTasksElement.textContent = completed;
-remainingTasksElement.textContent = remaining;
-progressPercentageElement.textContent = `${percentage}%`;
+    const percentage =
+        total === 0 ? 0 : Math.round((completed / total) * 100);
 
-progressFillElement.style.width = `${percentage}%`;
-progressTrackElement.setAttribute("aria-valuenow", String(percentage));
+    if (totalTasksElement) {
+        totalTasksElement.textContent = total;
+    }
 
-if (remaining === 0) {
-    progressMessageElement.textContent = "Excellent work! You have completed all eight tasks.";
-} else {
-    progressMessageElement.textContent =
-        `You have completed ${completed} of ${total} tasks, with ${remaining} remaining. Keep going!`;
+    if (completedTasksElement) {
+        completedTasksElement.textContent = completed;
+    }
+
+    if (remainingTasksElement) {
+        remainingTasksElement.textContent = remaining;
+    }
+
+    if (progressPercentageElement) {
+        progressPercentageElement.textContent = percentage + "%";
+    }
+
+    if (progressFillElement) {
+        progressFillElement.style.width = percentage + "%";
+    }
+
+    if (progressTrackElement) {
+        progressTrackElement.setAttribute(
+            "aria-valuenow",
+            String(percentage)
+        );
+    }
+
+    if (progressMessageElement) {
+        if (total === 0) {
+            progressMessageElement.textContent =
+                "Your progress will appear when tasks are loaded.";
+        } else if (percentage === 100) {
+            progressMessageElement.textContent =
+                "Excellent work! You have completed all your tasks.";
+        } else if (percentage === 0) {
+            progressMessageElement.textContent =
+                "Your learning journey starts here. Complete your first task to make progress.";
+        } else {
+            progressMessageElement.textContent =
+                "You have completed " +
+                completed +
+                " of " +
+                total +
+                " tasks. Keep going!";
+        }
+    }
 }
 
+async function markTaskCompleted(taskNumber) {
+    const task = dashboardTasks.find(function (item) {
+        return item.number === taskNumber;
+    });
+
+    if (!task || task.status === "completed") {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/tasks/" + taskNumber, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                status: "completed"
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                result.error || "Unable to update task status."
+            );
+        }
+
+        task.status = result.task.status;
+
+        setApiStatus(true);
+        hideApiError();
+        updateProgress();
+        renderTasks();
+    } catch (error) {
+        console.error("Unable to update task:", error);
+        setApiStatus(false);
+
+        alert(
+            "Unable to mark this task as completed. Check that the API server is running and try again."
+        );
+    }
 }
 
-function markTaskCompleted(taskNumber) {
-const task = dashboardTasks.find(function (item) {
-return item.number === taskNumber;
-});
+async function showTaskDetails(taskNumber) {
+    let dialog = document.getElementById("dashboard-task-dialog");
 
-if (!task || task.status === "completed") {
-    return;
-}
+    if (!dialog) {
+        createTaskDialog();
+        dialog = document.getElementById("dashboard-task-dialog");
+    }
 
-task.status = "completed";
+    const titleElement = document.getElementById("dashboard-dialog-title");
+    const dayElement = document.getElementById("dashboard-dialog-day");
+    const difficultyElement = document.getElementById(
+        "dashboard-dialog-difficulty"
+    );
+    const statusElement = document.getElementById(
+        "dashboard-dialog-status"
+    );
+    const descriptionElement = document.getElementById(
+        "dashboard-dialog-description"
+    );
 
-saveProgress();
-updateProgress();
-renderTasks();
+    titleElement.textContent = "Loading task details...";
+    dayElement.textContent = "";
+    difficultyElement.textContent = "";
+    statusElement.textContent = "";
+    descriptionElement.textContent =
+        "Retrieving task information from the API.";
 
-}
+    if (typeof dialog.showModal === "function") {
+        if (!dialog.open) {
+            dialog.showModal();
+        }
+    } else {
+        dialog.setAttribute("open", "");
+    }
 
-function showTaskDetails(task) {
-const dialog = document.getElementById("dashboard-task-dialog");
+    try {
+        const response = await fetch("/api/tasks/" + taskNumber);
+        const task = await response.json();
 
-if (!dialog) {
-    createTaskDialog();
-}
+        if (!response.ok) {
+            throw new Error(
+                task.error || "Unable to retrieve task details."
+            );
+        }
 
-const taskDialog = document.getElementById("dashboard-task-dialog");
+        titleElement.textContent = "Task " + task.id + ": " + task.title;
+        dayElement.textContent = "Scheduled Day: " + task.day;
+        difficultyElement.textContent = "Difficulty: " + task.difficulty;
+        statusElement.textContent = "Status: " + getStatusLabel(task.status);
+        descriptionElement.textContent = task.description;
 
-document.getElementById("dashboard-dialog-title").textContent =
-    `Task ${task.number}: ${task.title}`;
+        setApiStatus(true);
+        hideApiError();
+    } catch (error) {
+        console.error("Unable to load task details:", error);
 
-document.getElementById("dashboard-dialog-day").textContent =
-    `Scheduled Day: ${task.day}`;
+        setApiStatus(false);
 
-document.getElementById("dashboard-dialog-difficulty").textContent =
-    `Difficulty: ${task.difficulty}`;
-
-document.getElementById("dashboard-dialog-status").textContent =
-    `Status: ${getStatusLabel(task.status)}`;
-
-document.getElementById("dashboard-dialog-description").textContent =
-    task.description;
-
-if (typeof taskDialog.showModal === "function") {
-    taskDialog.showModal();
-} else {
-    taskDialog.setAttribute("open", "");
-}
-
+        titleElement.textContent = "Unable to Load Task";
+        descriptionElement.textContent =
+            "Task details could not be retrieved. Check that the API server is running and try again.";
+    }
 }
 
 function createTaskDialog() {
-const dialog = document.createElement("dialog");
-dialog.id = "dashboard-task-dialog";
-dialog.className = "dashboard-dialog";
-dialog.setAttribute("aria-labelledby", "dashboard-dialog-title");
+    const dialog = document.createElement("dialog");
+    dialog.id = "dashboard-task-dialog";
+    dialog.className = "dashboard-dialog";
 
-const content = document.createElement("div");
-content.className = "dashboard-dialog-content";
+    const content = document.createElement("div");
+    content.className = "dashboard-dialog-content";
 
-const header = document.createElement("div");
-header.className = "dashboard-dialog-header";
+    const header = document.createElement("div");
+    header.className = "dashboard-dialog-header";
 
-const title = document.createElement("h2");
-title.id = "dashboard-dialog-title";
+    const title = document.createElement("h2");
+    title.id = "dashboard-dialog-title";
 
-const closeButton = document.createElement("button");
-closeButton.type = "button";
-closeButton.className = "dashboard-dialog-close";
-closeButton.setAttribute("aria-label", "Close task details");
-closeButton.textContent = "×";
-closeButton.addEventListener("click", function () {
-    if (typeof dialog.close === "function") {
-        dialog.close();
-    } else {
-        dialog.removeAttribute("open");
-    }
-});
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "dashboard-dialog-close";
+    closeButton.textContent = "×";
+    closeButton.setAttribute("aria-label", "Close task details");
 
-header.append(title, closeButton);
-
-const day = document.createElement("p");
-day.id = "dashboard-dialog-day";
-
-const difficulty = document.createElement("p");
-difficulty.id = "dashboard-dialog-difficulty";
-
-const status = document.createElement("p");
-status.id = "dashboard-dialog-status";
-
-const descriptionHeading = document.createElement("h3");
-descriptionHeading.textContent = "Task Description";
-
-const description = document.createElement("p");
-description.id = "dashboard-dialog-description";
-
-content.append(
-    header,
-    day,
-    difficulty,
-    status,
-    descriptionHeading,
-    description
-);
-
-dialog.appendChild(content);
-document.querySelector(".page").appendChild(dialog);
-
-dialog.addEventListener("click", function (event) {
-    if (event.target === dialog && typeof dialog.close === "function") {
-        dialog.close();
-    }
-});
-
-}
-
-taskFilterButtons.forEach(function (button) {
-button.addEventListener("click", function () {
-activeTaskFilter = button.dataset.statusFilter;
-
-    taskFilterButtons.forEach(function (filterButton) {
-        const isActive = filterButton === button;
-
-        filterButton.classList.toggle("active", isActive);
-        filterButton.setAttribute("aria-pressed", String(isActive));
+    closeButton.addEventListener("click", function () {
+        if (typeof dialog.close === "function") {
+            dialog.close();
+        } else {
+            dialog.removeAttribute("open");
+        }
     });
 
-    renderTasks();
-});
+    header.appendChild(title);
+    header.appendChild(closeButton);
 
-});
+    const day = document.createElement("p");
+    day.id = "dashboard-dialog-day";
 
-const technologyInformation = {
-nextjs: {
-title: "Next.js",
-description: "Next.js is a React framework for building web applications. It provides routing, server rendering, and tools for building production-ready websites.",
-points: [
-"Built on React.",
-"Supports file-based routing.",
-"Can render pages on the server or the client."
-],
-link: "https://nextjs.org/"
-},
-vue: {
-title: "Vue.js",
-description: "Vue.js is a JavaScript framework for building user interfaces. It uses a component-based approach and can be adopted gradually.",
-points: [
-"Uses reactive data and components.",
-"Supports declarative templates.",
-"Can power small interactive features or complete applications."
-],
-link: "https://vuejs.org/"
-},
-angular: {
-title: "Angular",
-description: "Angular is a web development platform for building structured applications, maintained by Google and designed around TypeScript.",
-points: [
-"Uses TypeScript.",
-"Includes routing and dependency injection tools.",
-"Provides a structured approach to larger applications."
-],
-link: "https://angular.dev/"
-},
-backend: {
-title: "Backend Development",
-description: "Backend development handles server-side logic, data storage, authentication, and communication between the application and its database.",
-points: [
-"Node.js runs JavaScript outside the browser.",
-"Express.js is a web framework for Node.js.",
-"Django is a Python framework for building web applications.",
-"PostgreSQL is a relational database used to store structured information."
-],
-link: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side"
+    const difficulty = document.createElement("p");
+    difficulty.id = "dashboard-dialog-difficulty";
+
+    const status = document.createElement("p");
+    status.id = "dashboard-dialog-status";
+
+    const description = document.createElement("p");
+    description.id = "dashboard-dialog-description";
+
+    content.appendChild(header);
+    content.appendChild(day);
+    content.appendChild(difficulty);
+    content.appendChild(status);
+    content.appendChild(description);
+
+    dialog.appendChild(content);
+    document.body.appendChild(dialog);
+
+    dialog.addEventListener("click", function (event) {
+        if (event.target === dialog) {
+            if (typeof dialog.close === "function") {
+                dialog.close();
+            } else {
+                dialog.removeAttribute("open");
+            }
+        }
+    });
 }
-};
+
+function initializeTaskFilters() {
+    const filterButtons = document.querySelectorAll("[data-status-filter]");
+
+    filterButtons.forEach(function (button) {
+        button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.statusFilter === activeFilter)
+        );
+
+        button.addEventListener("click", function () {
+            activeFilter = button.dataset.statusFilter;
+
+            filterButtons.forEach(function (filterButton) {
+                const isActive =
+                    filterButton.dataset.statusFilter === activeFilter;
+
+                filterButton.classList.toggle("active", isActive);
+                filterButton.setAttribute("aria-pressed", String(isActive));
+            });
+
+            renderTasks();
+        });
+    });
+}
 
 function renderTechnology(technologyKey) {
-const technology = technologyInformation[technologyKey];
+    const technology = technologyInformation[technologyKey];
 
-if (!technology) {
-    return;
+    if (!technology) {
+        return;
+    }
+
+    if (technologyTitleElement) {
+        technologyTitleElement.textContent = technology.title;
+    }
+
+    if (technologyDescriptionElement) {
+        technologyDescriptionElement.textContent = technology.description;
+    }
+
+    if (technologyExtraElement) {
+        technologyExtraElement.textContent = technology.extra;
+    }
+
+    if (technologyLinkElement) {
+        technologyLinkElement.href = technology.link;
+        technologyLinkElement.target = "_blank";
+        technologyLinkElement.rel = "noopener noreferrer";
+    }
+
+    document.querySelectorAll("[data-technology]").forEach(function (button) {
+        const isActive = button.dataset.technology === technologyKey;
+
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
 }
 
-document.getElementById("technology-title").textContent = technology.title;
-document.getElementById("technology-description").textContent = technology.description;
+function initializeTechnologyExplorer() {
+    document.querySelectorAll("[data-technology]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            renderTechnology(button.dataset.technology);
+        });
+    });
 
-const extra = document.getElementById("technology-extra");
-extra.replaceChildren();
-
-const list = document.createElement("ul");
-
-technology.points.forEach(function (point) {
-    const item = document.createElement("li");
-    item.textContent = point;
-    list.appendChild(item);
-});
-
-extra.appendChild(list);
-
-const link = document.getElementById("technology-link");
-link.href = technology.link;
-link.textContent = `Learn More About ${technology.title}`;
-
-technologyButtons.forEach(function (button) {
-    const isActive = button.dataset.technology === technologyKey;
-
-    button.classList.toggle("active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-});
-
+    renderTechnology("nextjs");
 }
 
-technologyButtons.forEach(function (button) {
-button.addEventListener("click", function () {
-renderTechnology(button.dataset.technology);
-});
-});
+function initializeDashboard() {
+    createApiElements();
+    createTaskDialog();
+    initializeTaskFilters();
+    initializeTechnologyExplorer();
+    loadTasks();
+}
 
-loadSavedProgress();
-updateProgress();
-renderTasks();
-renderTechnology("nextjs");
+initializeDashboard();
