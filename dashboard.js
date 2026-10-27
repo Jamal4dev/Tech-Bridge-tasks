@@ -1,7 +1,9 @@
 let dashboardTasks = [];
 
 let activeFilter = "all";
+let taskSearchQuery = "";
 
+const taskSearchInput = document.getElementById("task-search-input");
 const taskListElement = document.getElementById("dashboard-task-list");
 const taskResultsElement = document.getElementById("task-results");
 const totalTasksElement = document.getElementById("total-tasks");
@@ -169,7 +171,7 @@ async function loadTasks() {
         renderTasks();
 
         showApiError(
-            "Unable to load tasks. Make sure the TechBridge API server is running, then reload this page."
+            "Unable to load tasks from the API. Check your connection and try again."
         );
     } finally {
         showLoading(false);
@@ -187,12 +189,22 @@ function getStatusLabel(status) {
 }
 
 function getFilteredTasks() {
-    if (activeFilter === "all") {
-        return dashboardTasks;
-    }
+    const query = taskSearchQuery.trim().toLowerCase();
 
     return dashboardTasks.filter(function (task) {
-        return task.status === activeFilter;
+        const matchesStatus =
+            activeFilter === "all" || task.status === activeFilter;
+
+        const searchableText = [
+            task.title,
+            task.description,
+            task.difficulty,
+            "task " + task.number,
+            "day " + task.day,
+            getStatusLabel(task.status)
+        ].join(" ").toLowerCase();
+
+        return matchesStatus && (!query || searchableText.includes(query));
     });
 }
 
@@ -250,18 +262,31 @@ function createTaskCard(task) {
 
     actions.appendChild(detailsButton);
 
-    if (task.status !== "completed") {
-        const completeButton = document.createElement("button");
-        completeButton.type = "button";
-        completeButton.className = "btn-primary";
-        completeButton.textContent = "Mark as Completed";
+    const statusLabel = document.createElement("label");
+    statusLabel.className = "task-status-control";
+    statusLabel.textContent = "Update status ";
 
-        completeButton.addEventListener("click", function () {
-            markTaskCompleted(task.number);
-        });
+    const statusSelect = document.createElement("select");
+    statusSelect.setAttribute("aria-label", "Update status for Task " + task.number);
 
-        actions.appendChild(completeButton);
-    }
+    [
+        { value: "not-started", label: "Not Started" },
+        { value: "in-progress", label: "In Progress" },
+        { value: "completed", label: "Completed" }
+    ].forEach(function (optionData) {
+        const option = document.createElement("option");
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+        option.selected = optionData.value === task.status;
+        statusSelect.appendChild(option);
+    });
+
+    statusSelect.addEventListener("change", function () {
+        updateTaskStatus(task.number, statusSelect.value, statusSelect);
+    });
+
+    statusLabel.appendChild(statusSelect);
+    actions.appendChild(statusLabel);
 
     card.appendChild(header);
     card.appendChild(title);
@@ -283,11 +308,9 @@ function renderTasks() {
 
     if (taskResultsElement) {
         taskResultsElement.textContent =
-            "Showing " +
-            filteredTasks.length +
-            " of " +
-            dashboardTasks.length +
-            " tasks";
+            "Showing " + filteredTasks.length + " of " +
+            dashboardTasks.length + " tasks" +
+            (taskSearchQuery.trim() ? " matching \"" + taskSearchQuery.trim() + "\"" : "");
     }
 
     if (filteredTasks.length === 0) {
@@ -297,6 +320,9 @@ function renderTasks() {
         if (dashboardTasks.length === 0) {
             emptyMessage.textContent =
                 "No tasks are available. Check the API connection and try again.";
+        } else if (taskSearchQuery.trim()) {
+            emptyMessage.textContent =
+                "No tasks match \"" + taskSearchQuery.trim() + "\" with the current filters. Try a different search.";
         } else if (activeFilter === "completed") {
             emptyMessage.textContent =
                 "You have not completed any tasks yet.";
@@ -379,36 +405,33 @@ function updateProgress() {
     }
 }
 
-async function markTaskCompleted(taskNumber) {
+async function updateTaskStatus(taskNumber, newStatus, controlElement) {
     const task = dashboardTasks.find(function (item) {
         return item.number === taskNumber;
     });
 
-    if (!task || task.status === "completed") {
+    if (!task || task.status === newStatus) {
         return;
+    }
+
+    if (controlElement) {
+        controlElement.disabled = true;
     }
 
     try {
         const response = await fetch("/api/tasks/" + taskNumber, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                status: "completed"
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus })
         });
 
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(
-                result.error || "Unable to update task status."
-            );
+            throw new Error(result.error || "Unable to update task status.");
         }
 
         task.status = result.task.status;
-
         setApiStatus(true);
         hideApiError();
         updateProgress();
@@ -416,10 +439,13 @@ async function markTaskCompleted(taskNumber) {
     } catch (error) {
         console.error("Unable to update task:", error);
         setApiStatus(false);
-
-        alert(
-            "Unable to mark this task as completed. Check that the API server is running and try again."
+        showApiError(
+            "The task status could not be saved. Check your connection and try again."
         );
+        if (controlElement) {
+            controlElement.value = task.status;
+            controlElement.disabled = false;
+        }
     }
 }
 
@@ -483,7 +509,7 @@ async function showTaskDetails(taskNumber) {
 
         titleElement.textContent = "Unable to Load Task";
         descriptionElement.textContent =
-            "Task details could not be retrieved. Check that the API server is running and try again.";
+            "Task details could not be retrieved. Check your connection and try again.";
     }
 }
 
@@ -619,6 +645,13 @@ function initializeTechnologyExplorer() {
 }
 
 function initializeDashboard() {
+    if (taskSearchInput) {
+        taskSearchInput.addEventListener("input", function () {
+            taskSearchQuery = taskSearchInput.value;
+            renderTasks();
+        });
+    }
+
     createApiElements();
     createTaskDialog();
     initializeTaskFilters();

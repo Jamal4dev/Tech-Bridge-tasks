@@ -292,6 +292,7 @@ const trackFilterButtons = document.querySelectorAll(
 );
 
 const difficultyFilter = document.getElementById("difficulty-filter");
+const challengeSearchInput = document.getElementById("challenge-search-input");
 
 
 // Modal elements
@@ -310,6 +311,7 @@ const dialogDoneButton = document.getElementById("dialog-done");
 let selectedTrack = "all";
 
 let selectedDifficulty = "all";
+let challengeSearchQuery = "";
 
 
 // ============================================
@@ -443,7 +445,22 @@ function renderChallenges() {
             selectedDifficulty === "all" ||
             challenge.difficulty === selectedDifficulty;
 
-        return matchesTrack && matchesDifficulty;
+        const query = challengeSearchQuery.trim().toLowerCase();
+        const searchableText = [
+            challenge.title,
+            challenge.description,
+            challenge.outcome,
+            challenge.objective,
+            challenge.trackName,
+            challenge.difficulty,
+            challenge.skills.join(" "),
+            challenge.tools.join(" "),
+            challenge.deliverables.join(" ")
+        ].join(" ").toLowerCase();
+
+        const matchesSearch = !query || searchableText.includes(query);
+
+        return matchesTrack && matchesDifficulty && matchesSearch;
 
     });
 
@@ -465,8 +482,9 @@ function renderChallenges() {
 
         emptyMessage.className = "challenge-empty";
 
-        emptyMessage.textContent =
-            "No challenges match your selected filters. Try changing your filters.";
+        emptyMessage.textContent = challengeSearchQuery.trim()
+            ? "No challenges match your search and selected filters. Try a different search or adjust the filters."
+            : "No challenges match your selected filters. Try changing your filters.";
 
         challengeGrid.appendChild(emptyMessage);
 
@@ -485,6 +503,18 @@ function renderChallenges() {
 
     });
 
+}
+
+
+// ============================================
+// CHALLENGE SEARCH
+// ============================================
+
+if (challengeSearchInput) {
+    challengeSearchInput.addEventListener("input", function () {
+        challengeSearchQuery = challengeSearchInput.value;
+        renderChallenges();
+    });
 }
 
 

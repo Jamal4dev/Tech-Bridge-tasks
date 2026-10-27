@@ -51,7 +51,7 @@
     "id": 7,
     "title": "Build the Intern Dashboard",
     "description": "Create a dashboard where an intern can view their profile, progress, tasks and submissions.",
-    "status": "not-started",
+    "status": "completed",
     "day": 22,
     "difficulty": "Intermediate"
   },
@@ -59,7 +59,7 @@
     "id": 8,
     "title": "Build the Complete TechBridge Internship Platform",
     "description": "Combine the different components created during the internship into a complete TechBridge platform.",
-    "status": "not-started",
+    "status": "in-progress",
     "day": 26,
     "difficulty": "Intermediate"
   }

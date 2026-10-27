@@ -25,6 +25,16 @@
                         <li><a href="index.html#apply">Apply</a></li>
                     </ul>
                 </nav>
+
+                <fieldset class="theme-picker">
+                    <legend>Color theme</legend>
+                    <input class="theme-option" type="radio" id="theme-light" name="theme" value="light">
+                    <label for="theme-light">Light</label>
+                    <input class="theme-option" type="radio" id="theme-system" name="theme" value="system" checked>
+                    <label for="theme-system">System</label>
+                    <input class="theme-option" type="radio" id="theme-dark" name="theme" value="dark">
+                    <label for="theme-dark">Dark</label>
+                </fieldset>
             </div>
         </header>
 
@@ -82,6 +92,16 @@
                     <p class="dashboard-eyebrow">TASK MANAGEMENT</p>
                     <h2>Your Internship Tasks</h2>
                     <p>View your assignments and update their completion status.</p>
+                </div>
+
+                <div class="task-search">
+                    <label for="task-search-input">Search tasks</label>
+                    <input
+                        type="search"
+                        id="task-search-input"
+                        placeholder="Search by task title, description, or difficulty..."
+                        autocomplete="off"
+                    >
                 </div>
 
                 <div class="task-filters" role="group" aria-label="Filter tasks by status">
